@@ -38,12 +38,12 @@ class MFRC522:
     PCD_RECEIVE = 0x08
     PCD_TRANSCEIVE = 0x0C
     PCD_AUTHENT = 0x0E
-    PCD_RESETPHASE = 0x0F
+    PCD_SOFTRESET = 0x0F
 
     PICC_REQIDL = 0x26
     PICC_REQALL = 0x52
     PICC_ANTICOLL = 0x93
-    PICC_SElECTTAG = 0x93
+    PICC_SELECTTAG = 0x93
     PICC_AUTHENT1A = 0x60
     PICC_AUTHENT1B = 0x61
     PICC_READ = 0x30
@@ -60,9 +60,9 @@ class MFRC522:
 
     Reserved00 = 0x00
     CommandReg = 0x01
-    CommIEnReg = 0x02
-    DivlEnReg = 0x03
-    CommIrqReg = 0x04
+    ComIEnReg = 0x02
+    DivIEnReg = 0x03
+    ComIrqReg = 0x04
     DivIrqReg = 0x05
     ErrorReg = 0x06
     Status1Reg = 0x07
@@ -80,16 +80,16 @@ class MFRC522:
     TxModeReg = 0x12
     RxModeReg = 0x13
     TxControlReg = 0x14
-    TxAutoReg = 0x15
+    TxASKReg = 0x15
     TxSelReg = 0x16
     RxSelReg = 0x17
     RxThresholdReg = 0x18
     DemodReg = 0x19
     Reserved11 = 0x1A
     Reserved12 = 0x1B
-    MifareReg = 0x1C
-    Reserved13 = 0x1D
-    Reserved14 = 0x1E
+    MfTxReg = 0x1C
+    MfRxReg = 0x1D
+    Reserved13 = 0x1E
     SerialSpeedReg = 0x1F
 
     Reserved20 = 0x20
@@ -106,8 +106,8 @@ class MFRC522:
     TPrescalerReg = 0x2B
     TReloadRegH = 0x2C
     TReloadRegL = 0x2D
-    TCounterValueRegH = 0x2E
-    TCounterValueRegL = 0x2F
+    TCounterValRegH = 0x2E
+    TCounterValRegL = 0x2F
 
     Reserved30 = 0x30
     TestSel1Reg = 0x31
@@ -156,7 +156,7 @@ class MFRC522:
         self.MFRC522_Init()
 
     def MFRC522_Reset(self):
-        self.Write_MFRC522(self.CommandReg, self.PCD_RESETPHASE)
+        self.Write_MFRC522(self.CommandReg, self.PCD_SOFTRESET)
 
     def Write_MFRC522(self, addr, val):
         val = self.spi.xfer2([(addr << 1) & 0x7E, val])
@@ -201,8 +201,8 @@ class MFRC522:
             irqEn = 0x77
             waitIRq = 0x30
 
-        self.Write_MFRC522(self.CommIEnReg, irqEn | 0x80)
-        self.ClearBitMask(self.CommIrqReg, 0x80)
+        self.Write_MFRC522(self.ComIEnReg, irqEn | 0x80)
+        self.ClearBitMask(self.ComIrqReg, 0x80)
         self.SetBitMask(self.FIFOLevelReg, 0x80)
 
         self.Write_MFRC522(self.CommandReg, self.PCD_IDLE)
@@ -217,7 +217,7 @@ class MFRC522:
 
         i = 2000
         while True:
-            n = self.Read_MFRC522(self.CommIrqReg)
+            n = self.Read_MFRC522(self.ComIrqReg)
             i -= 1
             if ~((i != 0) and ~(n & 0x01) and ~(n & waitIRq)):
                 break
@@ -313,7 +313,7 @@ class MFRC522:
     def MFRC522_SelectTag(self, serNum):
         backData = []
         buf = []
-        buf.append(self.PICC_SElECTTAG)
+        buf.append(self.PICC_SELECTTAG)
         buf.append(0x70)
         
         for i in range(5):
@@ -423,6 +423,6 @@ class MFRC522:
         self.Write_MFRC522(self.TReloadRegL, 30)
         self.Write_MFRC522(self.TReloadRegH, 0)
 
-        self.Write_MFRC522(self.TxAutoReg, 0x40)
+        self.Write_MFRC522(self.TxASKReg, 0x40)
         self.Write_MFRC522(self.ModeReg, 0x3D)
         self.AntennaOn()
