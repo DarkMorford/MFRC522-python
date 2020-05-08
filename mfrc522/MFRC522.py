@@ -184,6 +184,48 @@ class MFRC522:
 
     def AntennaOff(self):
         self.ClearBitMask(self.TxControlReg, 0x03)
+        
+    def tag_data_transfer(self, tx_data, *, valid_bits=0, rx_alignment=0, check_crc=False):
+        return self.tag_transaction(self.PCD_TRANSCEIVE, tx_data, 0x30, valid_bits=valid_bits, rx_alignment=rx_alignment, check_crc=check_crc)
+        
+    def tag_transaction(self, command, tx_data, success_irq_mask, *, valid_bits=0, rx_alignment=0, check_crc=False):
+        tx_bits = valid_bits % 8
+        bit_frame = ((rx_alignment % 8) << 4) | tx_bits
+        
+        self.Write_MFRC522(self.CommandReg, self.PCD_IDLE)
+        self.Write_MFRC522(self.ComIrqReg, 0x7F)
+        self.Write_MFRC522(self.FIFOLevelReg, 0x80)
+        
+        for d in tx_data:
+            self.Write_MFRC522(self.FIFODataReg, d)
+            
+        self.Write_MFRC522(self.BitFramingReg, bit_frame)
+        self.Write_MFRC522(self.CommandReg, command)
+        if command == self.PCD_TRANSCEIVE:
+            self.SetBitMask(self.BitFramingReg, 0x80)
+            
+        xfer_timeout = True
+        for i in range(2000):
+            irq_status = self.Read_MFRC522(self.ComIrqReg)
+            if irq_status & success_irq_mask:
+                xfer_timeout = False
+                break
+            if irq_status & 0x01:
+                break
+        if xfer_timeout:
+            return (self.MI_NOTAGERR, None, 0)
+            
+        error_status = self.Read_MFRC522(self.ErrorReg)
+        if error_status & 0x13:
+            return (self.MI_ERR, None, 0)
+            
+        rx_data = bytearray()
+        rx_bytes = self.Read_MFRC522(self.FIFOLevelReg)
+        for i in range(rx_bytes):
+            rx_data.append(self.Read_MFRC522(self.FIFODataReg))
+        rx_bits = rx_bytes * 8
+        
+        return (self.MI_OK, bytes(rx_data), rx_bits)
 
     def MFRC522_ToCard(self, command, sendData):
         backData = []
