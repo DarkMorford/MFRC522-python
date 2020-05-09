@@ -301,7 +301,7 @@ class MFRC522:
         self.Write_MFRC522(self.BitFramingReg, 0x07)
 
         TagType.append(reqMode)
-        (status, backData, backBits) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE, TagType)
+        (status, backData, backBits) = self.tag_data_transfer(TagType)
 
         if ((status != self.MI_OK) | (backBits != 0x10)):
             status = self.MI_ERR
@@ -319,7 +319,7 @@ class MFRC522:
         serNum.append(self.PICC_ANTICOLL)
         serNum.append(0x20)
 
-        (status, backData, backBits) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE, serNum)
+        (status, backData, backBits) = self.tag_data_transfer(serNum)
 
         if (status == self.MI_OK):
             i = 0
@@ -364,7 +364,7 @@ class MFRC522:
         pOut = self.CalculateCRC(buf)
         buf.append(pOut[0])
         buf.append(pOut[1])
-        (status, backData, backLen) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE, buf)
+        (status, backData, backLen) = self.tag_data_transfer(buf)
 
         if (status == self.MI_OK) and (backLen == 0x18):
             self.logger.debug("Size: " + str(backData[0]))
@@ -460,10 +460,10 @@ class MFRC522:
     def MFRC522_Init(self):
         self.MFRC522_Reset()
 
-        self.Write_MFRC522(self.TModeReg, 0x8D)
-        self.Write_MFRC522(self.TPrescalerReg, 0x3E)
-        self.Write_MFRC522(self.TReloadRegL, 30)
-        self.Write_MFRC522(self.TReloadRegH, 0)
+        self.Write_MFRC522(self.TModeReg, 0x80)
+        self.Write_MFRC522(self.TPrescalerReg, 0xA9)
+        self.Write_MFRC522(self.TReloadRegL, 0xE8)
+        self.Write_MFRC522(self.TReloadRegH, 0x03)
 
         self.Write_MFRC522(self.TxASKReg, 0x40)
         self.Write_MFRC522(self.ModeReg, 0x3D)
