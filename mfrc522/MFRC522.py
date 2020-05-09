@@ -301,7 +301,7 @@ class MFRC522:
         self.Write_MFRC522(self.BitFramingReg, 0x07)
 
         TagType.append(reqMode)
-        (status, backData, backBits) = self.tag_data_transfer(TagType)
+        (status, backData, backBits) = self.tag_data_transfer(TagType, valid_bits=7)
 
         if ((status != self.MI_OK) | (backBits != 0x10)):
             status = self.MI_ERR
